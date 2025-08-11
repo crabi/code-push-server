@@ -28,4 +28,5 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_TLS_DISABLED=${REDIS_TLS_DISABLED:-}
     restart: unless-stopped
