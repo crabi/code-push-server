@@ -29,4 +29,5 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_DB=${REDIS_DB:-0}
       - REDIS_TLS_DISABLED=${REDIS_TLS_DISABLED:-}
+      - CODE_PUSH_SERVER_URL=${CODE_PUSH_SERVER_URL:-}
     restart: unless-stopped
