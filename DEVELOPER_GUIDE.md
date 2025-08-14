@@ -24,7 +24,7 @@ code-push-standalone --version
 ### Step 2: Set Server URL
 ```bash
 # ⚠️ CRITICAL: The CLI needs this environment variable
-export CODE_PUSH_SERVER_URL=http://codepush.qa.crabi.net:3000
+export CODE_PUSH_SERVER_URL=https://codepush.qa.crabi.net
 ```
 
 ### Step 3: Register Your Account
@@ -93,8 +93,8 @@ Replace your existing `appcenter` scripts:
 ```json
 {
   "scripts": {
-    "codepush:qa": "code-push-standalone release-react MyApp-iOS ios --server http://codepush.qa.crabi.net:3000 --deploymentName Staging",
-    "codepush:prod": "code-push-standalone release-react MyApp-iOS ios --server http://codepush.qa.crabi.net:3000 --deploymentName Production"
+    "codepush:qa": "code-push-standalone release-react MyApp-iOS ios --server https://codepush.qa.crabi.net --deploymentName Staging",
+    "codepush:prod": "code-push-standalone release-react MyApp-iOS ios --server https://codepush.qa.crabi.net --deploymentName Production"
   }
 }
 ```
@@ -104,12 +104,12 @@ Replace your existing `appcenter` scripts:
 **iOS (Info.plist):**
 ```xml
 <key>CodePushServerURL</key>
-<string>http://codepush.qa.crabi.net:3000</string>
+<string>https://codepush.qa.crabi.net</string>
 ```
 
 **Android (strings.xml):**
 ```xml
-<string moduleConfig="true" name="CodePushServerUrl">http://codepush.qa.crabi.net:3000</string>
+<string moduleConfig="true" name="CodePushServerUrl">https://codepush.qa.crabi.net</string>
 ```
 
 ## 🔧 Essential CLI Commands
@@ -178,7 +178,7 @@ code-push-standalone logout
 1. **Morning Setup:**
 ```bash
 # Set server URL (add to your .bashrc/.zshrc for persistence)
-export CODE_PUSH_SERVER_URL=http://codepush.qa.crabi.net:3000
+export CODE_PUSH_SERVER_URL=https://codepush.qa.crabi.net
 
 # Verify you're logged in
 code-push-standalone whoami
@@ -225,7 +225,7 @@ code-push-standalone app list
 **❌ `getaddrinfo ENOTFOUND undefined`**
 ```bash
 # Fix: Set the server URL environment variable
-export CODE_PUSH_SERVER_URL=http://codepush.qa.crabi.net:3000
+export CODE_PUSH_SERVER_URL=https://codepush.qa.crabi.net
 ```
 
 **❌ "You are not currently logged in"**
@@ -288,5 +288,5 @@ code-push-standalone app list --debug
 - Don't commit access keys to git
 
 ### Environment URLs
-- **QA/Testing**: `http://codepush.qa.crabi.net:3000`
-- **Production**: `http://codepush.prod.crabi.net:3000` (when available)
+- **QA/Testing**: `https://codepush.qa.crabi.net`
+- **Production**: `https://codepush.prod.crabi.net` (when available)
