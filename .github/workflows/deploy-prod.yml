@@ -95,36 +95,36 @@ jobs:
         
         # Create production environment configuration with values from infrastructure
         echo "⚙️ Creating PRODUCTION environment configuration..."
-        cat > .env.prod << ENVFILE
-# CodePush Server - PRODUCTION Environment
-NODE_ENV=production
-BASE_URL=
-LOGGING=false
-ENABLE_PACKAGE_DIFFING=true
-ENABLE_ACCOUNT_REGISTRATION=false
-
-# AWS S3 Configuration (using IAM role)
-AWS_BUCKET_NAME=${{ steps.get-instance.outputs.bucket-name }}
-AWS_REGION=${{ env.AWS_REGION }}
-
-# Authentication Settings (production - no debug mode)
-DEBUG_DISABLE_AUTH=false
-DEBUG_USER_ID=
-
-# Redis Configuration
-REDIS_HOST=${{ env.REDIS_HOST_PROD }}
-REDIS_PORT=${{ env.REDIS_PORT_PROD }}
-REDIS_DB=${{ env.REDIS_DB_PROD }}
-REDIS_TLS_DISABLED=true
-
-# GitHub OAuth (injected from GitHub secrets)
-GITHUB_CLIENT_ID=${{ env.CODEPUSH_GITHUB_CLIENT_ID_PROD }}
-GITHUB_CLIENT_SECRET=${{ env.CODEPUSH_GITHUB_CLIENT_SECRET_PROD }}
-
-# Server Configuration
-CODE_PUSH_SERVER_URL=${{ steps.get-instance.outputs.server-url }}
-PORT=3000
-ENVFILE
+        {
+          echo "# CodePush Server - PRODUCTION Environment"
+          echo "NODE_ENV=production"
+          echo "BASE_URL="
+          echo "LOGGING=false"
+          echo "ENABLE_PACKAGE_DIFFING=true"
+          echo "ENABLE_ACCOUNT_REGISTRATION=false"
+          echo ""
+          echo "# AWS S3 Configuration (using IAM role)"
+          echo "AWS_BUCKET_NAME=${{ steps.get-instance.outputs.bucket-name }}"
+          echo "AWS_REGION=${{ env.AWS_REGION }}"
+          echo ""
+          echo "# Authentication Settings (production - no debug mode)"
+          echo "DEBUG_DISABLE_AUTH=false"
+          echo "DEBUG_USER_ID="
+          echo ""
+          echo "# Redis Configuration"
+          echo "REDIS_HOST=${{ env.REDIS_HOST_PROD }}"
+          echo "REDIS_PORT=${{ env.REDIS_PORT_PROD }}"
+          echo "REDIS_DB=${{ env.REDIS_DB_PROD }}"
+          echo "REDIS_TLS_DISABLED=true"
+          echo ""
+          echo "# GitHub OAuth (injected from GitHub secrets)"
+          echo "GITHUB_CLIENT_ID=${{ env.CODEPUSH_GITHUB_CLIENT_ID_PROD }}"
+          echo "GITHUB_CLIENT_SECRET=${{ env.CODEPUSH_GITHUB_CLIENT_SECRET_PROD }}"
+          echo ""
+          echo "# Server Configuration"
+          echo "CODE_PUSH_SERVER_URL=${{ steps.get-instance.outputs.server-url }}"
+          echo "PORT=3000"
+        } > .env.prod
         
         echo "🐳 Restarting PRODUCTION containers..."
         docker-compose --env-file .env.prod down || true
