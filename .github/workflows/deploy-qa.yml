@@ -95,7 +95,7 @@ jobs:
         
         # Create environment configuration with values from infrastructure
         echo "⚙️ Creating environment configuration..."
-        cat > .env.qa << ENVEOF
+        cat > .env.qa << 'ENVEOF'
 # CodePush Server - QA Environment
 NODE_ENV=development
 BASE_URL=

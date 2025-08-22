@@ -95,7 +95,7 @@ jobs:
         
         # Create production environment configuration with values from infrastructure
         echo "⚙️ Creating PRODUCTION environment configuration..."
-        cat > .env.prod << ENVEOF
+        cat > .env.prod << 'ENVEOF'
 # CodePush Server - PRODUCTION Environment
 NODE_ENV=production
 BASE_URL=
