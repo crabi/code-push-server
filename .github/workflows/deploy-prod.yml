@@ -77,7 +77,7 @@ jobs:
         ssh -i codepush_key.pem \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
-          ubuntu@${{ steps.get-instance.outputs.private-ip }} << 'EOF'
+          ubuntu@${{ steps.get-instance.outputs.private-ip }} << EOF
         
         set -e
         echo "📍 Starting PRODUCTION deployment on CodePush server..."
@@ -95,7 +95,7 @@ jobs:
         
         # Create production environment configuration with values from infrastructure
         echo "⚙️ Creating PRODUCTION environment configuration..."
-        cat > .env.prod << EOF
+        cat > .env.prod << ENVFILE
 # CodePush Server - PRODUCTION Environment
 NODE_ENV=production
 BASE_URL=
@@ -124,7 +124,7 @@ GITHUB_CLIENT_SECRET=${{ env.CODEPUSH_GITHUB_CLIENT_SECRET_PROD }}
 # Server Configuration
 CODE_PUSH_SERVER_URL=${{ steps.get-instance.outputs.server-url }}
 PORT=3000
-EOF
+ENVFILE
         
         echo "🐳 Restarting PRODUCTION containers..."
         docker-compose --env-file .env.prod down || true
