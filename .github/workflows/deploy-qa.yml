@@ -95,7 +95,7 @@ jobs:
         
         # Create environment configuration with values from infrastructure
         echo "⚙️ Creating environment configuration..."
-        cat > .env.qa << 'ENVEOF'
+        cat > .env.qa << EOF
 # CodePush Server - QA Environment
 NODE_ENV=development
 BASE_URL=
@@ -124,7 +124,7 @@ GITHUB_CLIENT_SECRET=${{ env.CODEPUSH_GITHUB_CLIENT_SECRET_QA }}
 # Server Configuration
 CODE_PUSH_SERVER_URL=${{ steps.get-instance.outputs.server-url }}
 PORT=3000
-ENVEOF
+EOF
         
         echo "🐳 Restarting containers..."
         docker-compose --env-file .env.qa down || true
