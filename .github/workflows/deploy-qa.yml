@@ -1,0 +1,157 @@
+name: Simple Deploy to QA
+
+on:
+  push:
+    branches: [ qa ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  CODEPUSH_GITHUB_CLIENT_ID_QA: ${{ secrets.CODEPUSH_GITHUB_CLIENT_ID_QA }}
+  CODEPUSH_GITHUB_CLIENT_SECRET_QA: ${{ secrets.CODEPUSH_GITHUB_CLIENT_SECRET_QA }}
+  REDIS_HOST_QA: cache.9eczd4.0001.use1.cache.amazonaws.com
+  REDIS_PORT_QA: 6379
+  REDIS_DB_QA: 0
+
+jobs:
+  deploy-qa:
+    runs-on: qa
+
+    steps:
+    - name: Get CodePush instance details
+      id: get-instance
+      run: |
+        # Get instance private IP from CloudFormation
+        PRIVATE_IP=$(aws cloudformation describe-stacks \
+          --stack-name CodePushServerStack \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`CodePushPrivateIP`].OutputValue' \
+          --output text)
+        
+        # Get infrastructure values for environment config
+        BUCKET_NAME=$(aws cloudformation describe-stacks \
+          --stack-name CodePushServerStack \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
+          --output text)
+        
+        SERVER_URL=$(aws cloudformation describe-stacks \
+          --stack-name CodePushServerStack \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`CodePushServerURL`].OutputValue' \
+          --output text)
+        
+        echo "private-ip=$PRIVATE_IP" >> $GITHUB_OUTPUT
+        echo "bucket-name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+        echo "server-url=$SERVER_URL" >> $GITHUB_OUTPUT
+
+    - name: Get SSH key for deployment
+      run: |
+        # Get SSH key from Parameter Store
+        KEY_PAIR_NAME=$(aws cloudformation describe-stacks \
+          --stack-name CodePushServerStack \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`KeyPairName`].OutputValue' \
+          --output text)
+        
+        KEY_PAIR_ID=$(aws ec2 describe-key-pairs \
+          --key-names $KEY_PAIR_NAME \
+          --region ${{ env.AWS_REGION }} \
+          --query 'KeyPairs[0].KeyPairId' \
+          --output text)
+        
+        aws ssm get-parameter \
+          --name "/ec2/keypair/$KEY_PAIR_ID" \
+          --region ${{ env.AWS_REGION }} \
+          --with-decryption \
+          --query 'Parameter.Value' \
+          --output text > codepush_key.pem
+        
+        chmod 400 codepush_key.pem
+
+    - name: Deploy to CodePush Server
+      run: |
+        echo "🚀 Deploying to CodePush QA server..."
+        echo "Target: ${{ steps.get-instance.outputs.private-ip }}"
+        
+        ssh -i codepush_key.pem \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          ubuntu@${{ steps.get-instance.outputs.private-ip }} << 'EOF'
+        
+        set -e
+        echo "📍 Starting deployment on CodePush server..."
+        
+        cd /opt/codepush
+        
+        # Clone repo on first deployment, pull on subsequent deployments
+        if [ ! -d ".git" ]; then
+          echo "🔄 First deployment - cloning repository..."
+          git clone https://github.com/crabi/code-push-server.git .
+        else
+          echo "🔄 Pulling latest changes..."
+          git pull origin qa
+        fi
+        
+        # Create environment configuration with values from infrastructure
+        echo "⚙️ Creating environment configuration..."
+        cat > .env.qa << ENVEOF
+# CodePush Server - QA Environment
+NODE_ENV=development
+BASE_URL=
+LOGGING=true
+ENABLE_PACKAGE_DIFFING=true
+ENABLE_ACCOUNT_REGISTRATION=true
+
+# AWS S3 Configuration (using IAM role)
+AWS_BUCKET_NAME=${{ steps.get-instance.outputs.bucket-name }}
+AWS_REGION=${{ env.AWS_REGION }}
+
+# Authentication Settings
+DEBUG_DISABLE_AUTH=false
+DEBUG_USER_ID=qa-test-user
+
+# Redis Configuration
+REDIS_HOST=${{ env.REDIS_HOST_QA }}
+REDIS_PORT=${{ env.REDIS_PORT_QA }}
+REDIS_DB=${{ env.REDIS_DB_QA }}
+REDIS_TLS_DISABLED=true
+
+# GitHub OAuth (injected from GitHub secrets)
+GITHUB_CLIENT_ID=${{ env.CODEPUSH_GITHUB_CLIENT_ID_QA }}
+GITHUB_CLIENT_SECRET=${{ env.CODEPUSH_GITHUB_CLIENT_SECRET_QA }}
+
+# Server Configuration
+CODE_PUSH_SERVER_URL=${{ steps.get-instance.outputs.server-url }}
+PORT=3000
+ENVEOF
+        
+        echo "🐳 Restarting containers..."
+        docker-compose --env-file .env.qa down || true
+        docker-compose --env-file .env.qa up --build -d
+        
+        echo "⏳ Waiting for containers to start..."
+        sleep 15
+        
+        echo "📊 Deployment status:"
+        docker-compose --env-file .env.qa ps
+        
+        echo "✅ Deployment completed successfully!"
+        EOF
+
+    - name: Verify deployment
+      run: |
+        echo "🔍 Verifying deployment..."
+        echo "🌐 Service URL: ${{ steps.get-instance.outputs.server-url }}"
+        
+        # Health check
+        sleep 5
+        if curl -f -s "${{ steps.get-instance.outputs.server-url }}" > /dev/null; then
+          echo "✅ CodePush server is responding!"
+        else
+          echo "⚠️ Server might still be starting up"
+        fi
+
+    - name: Cleanup
+      if: always()
+      run: rm -f codepush_key.pem
